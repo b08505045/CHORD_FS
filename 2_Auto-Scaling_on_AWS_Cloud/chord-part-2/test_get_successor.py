@@ -36,5 +36,8 @@ client = new_client(my_node_ip, 5057)
 successor = client.call("get_successor", 0)
 predecessor = client.call("get_predecessor")
 
-print(f'successor ip : {successor[0].decode()}')
-print(f'predecessor ip : {predecessor[0].decode()}')
+successor_ip = successor[0].decode()
+predecessor_ip = predecessor[0].decode()
+
+print(f'successor ip : {successor_ip}, hash : {hash(successor_ip)}')
+print(f'predecessor ip : {predecessor_ip}, hash : {hash(predecessor_ip)}')
