@@ -10,7 +10,7 @@ import time
 import subprocess
 import socket
 
-t = 5
+t = 10
 path = '/home/ec2-user/files'
 
 def new_client(ip, port):
@@ -23,6 +23,7 @@ def wait(t):
         print("wait {} sec...".format(t))
         time.sleep(t)
 
+print('data migration:')
 # get self.ip
 result = subprocess.run(['curl', 'http://checkip.amazonaws.com'], stdout=subprocess.PIPE)
 my_node_ip = result.stdout.decode().strip()
@@ -50,7 +51,7 @@ while True:
                 if node_ip != my_node_ip:
                         print(f' migrate data to {node_ip}')
                         # migrate data
-                        os.system("python3 /home/ec2-uer/chord-part-2/upload.py " + (path + '/' + file) + ' ' + node_ip)
+                        os.system("sudo python3 /home/ec2-uer/chord-part-2/upload.py " + (path + '/' + file) + ' ' + node_ip)
                         # delete data on local
                         os.remove(path + '/' + file)
                 else: print(' no migration')

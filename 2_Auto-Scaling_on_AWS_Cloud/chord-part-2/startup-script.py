@@ -13,11 +13,13 @@ import socket
 PORT = 5057
 t = 1
 is_ring = False         # check if ring exists
+path = '/home/ec2-user/files'
 
 def new_client(ip, port):
         return msgpackrpc.Client(msgpackrpc.Address(ip, port))
 
 def hash(str):
+        print('HASH')
         return int(hashlib.md5(str.encode()).hexdigest(), 16) & ((1 << 32) - 1)
 
 def wait(t):
@@ -27,18 +29,18 @@ def wait(t):
 # get self.ip
 result = subprocess.run(['curl', 'http://checkip.amazonaws.com'], stdout=subprocess.PIPE)
 my_node_ip = result.stdout.decode().strip()
-my_hashed_ip = int(hash(my_node_ip))
+filename = hash(my_node_ip)
 print(type(my_node_ip))
 print(f'My IP address:{my_node_ip}')
-print(type(my_node_ip))
+
+# create initial file
+print(f'create init file {filename}.txt')
+with open(path + '/' + str(filename) + '.txt', "w") as f:
+    f.write("init text.\n")
 
 # Start Chord node
-os.system(f"/home/ec2-user/chord {my_node_ip} 5057 &")
-
+os.system(f"/home/ec2-user/chord-part-2/chord {my_node_ip} 5057 &")
 # Start file server
-# directory = '/home/ec2-user/files'
-# command = f'nohup python3 -m http.server 5058 --directory {directory} > server.log 2>&1 &'
-# process = subprocess.Popen(command, shell=True)
 os.system("python3 -m uploadserver 5058 --directory /home/ec2-user/files &")
 
 # get instances' id from suto-scaling group
@@ -57,45 +59,33 @@ instance_ids = [i['InstanceId'] for i in instances]
 print(instance_ids)
 
 # get instances' ip
-ec2_client = boto3.client('ec2', region_name='eu-central-1')
-response = ec2_client.describe_instances(
-        InstanceIds=instance_ids
-)
-
-size = len(response['Reservations'])
 instance_ips = []
-for i in range(size):
-    instance_ips.append(response['Reservations'][i]['Instances'][0]['PublicIpAddress'])
+ec2_client = boto3.client('ec2', region_name='eu-central-1')
+for i in instances:
+    ip = ec2_client.describe_instances(
+        InstanceIds = [
+            i["InstanceId"]
+        ]
+    )['Reservations'][0]['Instances'][0]['PublicIpAddress']
+    instance_ips.append(ip)
     
+size = len(instance_ips)
 print(f'group size : {size}')
 print(instance_ips)
 
-# hashed_ips
-hashed_ips = [int(hash(instance_ip)) for instance_ip in instance_ips]
-# find minimum of hashed_ip
-min_ip = 0
-if size == 1:
-        min_ip = hashed_ips[0]
-elif size == 2:
-        min_ip = min(hashed_ips[0], hashed_ips[1])
-else:
-        min_ip = min(hashed_ips[0], hashed_ips[1])
-        for i in range(size):
-                if min_ip > hashed_ips[i]:
-                        min_ip = hashed_ips[i]
-print(f'My hashed ip : {my_hashed_ip}, min ip : {min_ip}')
-
 # join or create chord ring system
+wait(t)
 my_chord_client = new_client(my_node_ip, 5057)
 
 # test self node create successfully
-try:
-        my_chord_client.call("get_info")
-        print('get_info test success')
-except:
-        print('get_info test fail')
 
-# wait(t)
+try:
+    self = my_chord_client.call("get_info")
+    print(f'get self.info test success : {self}')
+except:
+    print('get_info test fail')
+
+
 # check if any chord node exists then join, otherwise create a chord ring
 for i in range(size):
         existing_node_ip = instance_ips[i]
@@ -103,40 +93,29 @@ for i in range(size):
                 continue
         try:
                 existing_chord_client = new_client(existing_node_ip, 5057)
-                existing_chord_client.call("get_info")
-                print('info got')
-                my_chord_client.call("join", existing_chord_client.call("get_info"))
-                print('good')
-                is_ring = True
-                break
+                existing_chord = existing_chord_client.call("get_info")
+                print("info got")
+                existing_chord_successor = existing_chord_client.call("get_successor", 0)
+                # current existing_chord isn't in ring
+                if existing_chord_successor[0] == b'':
+                        print('not in the ring')
+                        continue
+                # current existing_chord in ring
+                else:
+                        print(f'find chord in the ring : {existing_chord}')
+                        my_chord_client.call("join", existing_chord)
+                        print('good')
+                        is_ring = True
+                        break
         except:
                 print('no chord yet')
 
+# create a ring
 if is_ring == False:
-        print('no ring yet', end = ' ')
-        if my_hashed_ip == min_ip:
-                print('create')
-                try:
-                        my_chord_client.call("create")
-                        print('good')
-                except:
-                        print('???')
-        else:
-                print('wait for join')
-                wait(t*2)
-                for i in range(size):
-                        existing_node_ip = instance_ips[i]
-                        if my_node_ip == existing_node_ip:
-                                continue
-                        try:
-                                existing_chord_client = new_client(existing_node_ip, 5057)
-                                existing_chord_client.call("get_info")
-                                print('info got')
-                                my_chord_client.call("join", existing_chord_client.call("get_info"))
-                                print('good')
-                                is_ring = True
-                                break
-                        except:
-                                print('???')
-
+        print('no ring yet, create one')
+        try:
+                my_chord_client.call("create")
+                print('good')
+        except:
+                print('???')
 print('done')

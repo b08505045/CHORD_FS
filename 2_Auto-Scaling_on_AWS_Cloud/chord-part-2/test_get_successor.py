@@ -27,17 +27,18 @@ result = subprocess.run(['curl', 'http://checkip.amazonaws.com'], stdout=subproc
 my_node_ip = result.stdout.decode().strip()
 my_hashed_ip = hash(my_node_ip)
 print(type(my_node_ip))
-print(f'My IP address:{my_node_ip}')
+print(f'My IP address:{my_node_ip}, hash ip : {my_hashed_ip}')
 
 wait(t)
 
 client = new_client(my_node_ip, 5057)
-
+self = client.call("get_info")
+print(f'self : {self}')
 successor = client.call("get_successor", 0)
 predecessor = client.call("get_predecessor")
 
-successor_ip = successor[0].decode()
-predecessor_ip = predecessor[0].decode()
+print(f'successor : {successor}')
+print(f'predecessor : {predecessor}')
 
-print(f'successor ip : {successor_ip}, hash : {hash(successor_ip)}')
-print(f'predecessor ip : {predecessor_ip}, hash : {hash(predecessor_ip)}')
+if successor[0] == b'': print('successor null')
+if predecessor[0] == b'': print('predecessor null')

@@ -10,6 +10,10 @@ import time
 import subprocess
 import socket
 
+def hash(str):
+        print('HASH')
+        return int(hashlib.md5(str.encode()).hexdigest(), 16) & ((1 << 32) - 1)
+
 # get instances' id from suto-scaling group
 autoscaling_client = boto3.client('autoscaling', region_name='eu-central-1')
 response = autoscaling_client.describe_auto_scaling_groups(
@@ -26,16 +30,21 @@ instance_ids = [i['InstanceId'] for i in instances]
 print(instance_ids)
 
 # get instances' ip
-ec2_client = boto3.client('ec2', region_name='eu-central-1')
-response = ec2_client.describe_instances(
-        InstanceIds=instance_ids
-)
-
-print(response)
-size = len(response['Reservations'])
 instance_ips = []
-for i in range(size):
-    instance_ips.append(response['Reservations'][i]['Instances'][0]['PublicIpAddress'])
+ec2_client = boto3.client('ec2', region_name='eu-central-1')
+for i in instances:
+    ip = ec2_client.describe_instances(
+        InstanceIds = [
+            i["InstanceId"]
+        ]
+    )['Reservations'][0]['Instances'][0]['PublicIpAddress']
+    instance_ips.append(ip)
 
+size = len(instance_ips)
 print(f'group size : {size}')
 print(instance_ips)
+
+hash_ids = []
+for i in range(size):
+    hash_ids.append(hash(instance_ids[i]))
+print(hash_ids)
