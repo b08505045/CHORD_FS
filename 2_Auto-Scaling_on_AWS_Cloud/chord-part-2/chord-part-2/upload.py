@@ -23,13 +23,13 @@ client = new_client(ip, 5057)
 h = hash(filename)
 print("Hash of {} is {}".format(filename, h))
 
-node = client.call("create",)
 node = client.call("find_successor", h)
+print(node)
 node_ip = node[0].decode()
 
 files = {
 	'files': open(filepath, 'rb'),
 }
 
-print("Uploading file to http://{}".format(node_ip))
+print(f"Uploading {filename} (hash : {h}) to http://{node_ip} (hash : {node[2]})")
 response = requests.post('http://{}:5058/upload'.format(node_ip), files=files)

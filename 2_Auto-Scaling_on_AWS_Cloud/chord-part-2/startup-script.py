@@ -33,11 +33,6 @@ filename = hash(my_node_ip)
 print(type(my_node_ip))
 print(f'My IP address:{my_node_ip}')
 
-# create initial file
-print(f'create init file {filename}.txt')
-with open(path + '/' + str(filename) + '.txt', "w") as f:
-    f.write("init text.\n")
-
 # Start Chord node
 os.system(f"/home/ec2-user/chord-part-2/chord {my_node_ip} 5057 &")
 # Start file server

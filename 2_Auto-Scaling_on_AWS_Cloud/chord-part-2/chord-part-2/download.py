@@ -21,7 +21,7 @@ print("Hash of {} is {}".format(filename, h))
 node = client.call("find_successor", h)
 node_ip = node[0].decode()
 
-print("Downloading file from http://{}".format(node_ip))
+print(f"Downloading {filename} (hash : {h}) from http://{node_ip} (hash : {node[2]})")
 response = requests.get("http://{}:5058/{}".format(node_ip, filename))
 
 with open(filename, "wb") as f:

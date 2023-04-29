@@ -27,8 +27,11 @@ print('data migration:')
 # get self.ip
 result = subprocess.run(['curl', 'http://checkip.amazonaws.com'], stdout=subprocess.PIPE)
 my_node_ip = result.stdout.decode().strip()
-my_hashed_ip = int(hash(my_node_ip))
-print(f'ndoe hash : {my_hashed_ip}')
+# get node's hash
+my_client = new_client(my_node_ip, 5057)
+node = my_client.call("get_info")
+hashed_node = node[2]
+print(f"node's ip : {my_node_ip}, hash : {hashed_node}")
 
 my_chord_client = new_client(my_node_ip, 5057)
 
@@ -38,23 +41,20 @@ while True:
         files = os.listdir(path)    # get all current files on the node
         if len(files) == 0: 
                print('no file yet')
-        
-        for file in files:
-                if os.path.isfile(os.path.join(path, file)):
-                        print(file)
+        print(files)
+
         for file in files:
                 h = hash(file)
-                print(f' file hash : {h}', end = ',')
                 node = my_chord_client.call("find_successor", h)
                 node_ip = node[0].decode()
                 # need to migrate data
                 if node_ip != my_node_ip:
-                        print(f' migrate data to {node_ip}')
+                        print(f'{file} hash : {h}, migrate to {node_ip} (hash : {node[2]})')
                         # migrate data
-                        os.system("sudo python3 /home/ec2-uer/chord-part-2/upload.py " + (path + '/' + file) + ' ' + node_ip)
+                        os.system("sudo python3 /home/ec2-user/chord-part-2/upload.py " + (path + '/' + file) + ' ' + node_ip)
                         # delete data on local
                         os.remove(path + '/' + file)
-                else: print(' no migration')
+                else: print(f'{file} hash : {h}, no migration')
 
 
                       
