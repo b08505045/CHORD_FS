@@ -10,7 +10,7 @@ import time
 import subprocess
 import socket
 
-t = 10
+t = 20
 path = '/home/ec2-user/files'
 
 def new_client(ip, port):
@@ -45,15 +45,22 @@ while True:
 
         for file in files:
                 h = hash(file)
-                node = my_chord_client.call("find_successor", h)
+                try:
+                        node = my_chord_client.call("find_successor", h)
+                except:
+                        print('find_successor error')
                 node_ip = node[0].decode()
                 # need to migrate data
                 if node_ip != my_node_ip:
                         print(f'{file} hash : {h}, migrate to {node_ip} (hash : {node[2]})')
                         # migrate data
-                        os.system("sudo python3 /home/ec2-user/chord-part-2/upload.py " + (path + '/' + file) + ' ' + node_ip)
-                        # delete data on local
-                        os.remove(path + '/' + file)
+                        try:
+                                os.system("sudo python3 /home/ec2-user/chord-part-2/upload.py " + (path + '/' + file) + ' ' + node_ip)
+                                # delete data on local
+                                os.remove(path + '/' + file)
+                                print('migrate done')
+                        except:
+                                print('migrate error')
                 else: print(f'{file} hash : {h}, no migration')
 
 

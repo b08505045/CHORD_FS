@@ -27,7 +27,6 @@ result = subprocess.run(['curl', 'http://checkip.amazonaws.com'], stdout=subproc
 my_node_ip = result.stdout.decode().strip()
 my_hashed_ip = hash(my_node_ip)
 print(type(my_node_ip))
-print(f'My IP address:{my_node_ip}, hash ip : {my_hashed_ip}')
 
 wait(t)
 

@@ -43,8 +43,3 @@ for i in instances:
 size = len(instance_ips)
 print(f'group size : {size}')
 print(instance_ips)
-
-hash_ids = []
-for i in range(size):
-    hash_ids.append(hash(instance_ids[i]))
-print(hash_ids)
