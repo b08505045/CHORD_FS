@@ -10,7 +10,7 @@ import time
 import subprocess
 import socket
 
-t = 20
+t = 60
 path = '/home/ec2-user/files'
 
 def new_client(ip, port):
